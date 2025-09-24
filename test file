@@ -1,0 +1,12 @@
+// Create a torus
+string $torus[] = `polyTorus -r 1 -sr 0.5 -tw 0 -sx 20 -sy 20 -ax 0 1 0 -cuv 1 -ch 1`;
+select $torus;
+move 0 1 0;
+rename $torus[0] "ring1";
+
+
+string $sphere[] = `polySphere -r 1 -sx 20 -sy 20 -ax 0 1 0 -cuv 2 -ch 1`;
+select $sphere;
+move 0 1 0;
+rename $sphere[0] "ball"
+
