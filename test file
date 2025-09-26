@@ -10,15 +10,15 @@ select $sphere;
 move 0 1 0;
 rename $sphere[0] "ball"
 
-// Get everything selected
-string $sel[] = `ls -sl`;
-// Create our loop
-for ($each in $sel){
-    //do something - use $each to identify the objects
+// get everything selected
+    string $sel[] = `ls -sl`;
+    //create loop
+for ($each in $sel)
+{
+    //do something
     select $each;
-    move 0 1 0;
-    
-    
-
+    move -r 0 1 0;
 }
 
+
+scale -r 3.038928 3.038928 3.038928 ;
