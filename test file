@@ -36,3 +36,7 @@ move 0 1 0 -r $happyCube[0];
 int $one = 2;
 int $calc = $one * 10; 
 print $calc;
+
+
+string $sel[] = `ls -sl`;
+move 0 2 0 $sel;
