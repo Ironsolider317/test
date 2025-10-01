@@ -40,3 +40,46 @@ print $calc;
 
 string $sel[] = `ls -sl`;
 move 0 2 0 $sel;
+
+// UI system
+window;
+ 
+window -widthHeight 500 500
+-title "UI system"
+-visible on
+myWindow;
+
+global proc mySimpleUI() {
+    string $window = "myWindow";
+ 
+    // If the window exists, delete it
+    if (`window -exists $window`) {
+        deleteUI $window;
+    }
+ 
+    // Create a new window
+    window -title "My UI" $window;
+ 
+    columnLayout;
+ 
+    // Example UI element
+    button -label "hello there";
+ 
+    showWindow $window;
+}
+ 
+// This proc toggles the window open/close
+global proc toggleMyUI() {
+    string $window = "myWindow";
+ 
+    if (`window -exists $window`) {
+        deleteUI $window; // Close window
+    } else {
+        mySimpleUI();     // Open window
+    }
+}
+
+toggleMyUI;
+ 
+
+
