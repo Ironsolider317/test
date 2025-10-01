@@ -22,3 +22,17 @@ for ($each in $sel)
 
 
 scale -r 3.038928 3.038928 3.038928 ;
+
+// Create a variable staff with the values, pete, rob and jason
+string $hi[] = {"pete","rob","jason"};
+print $hi[1]; // print the second value
+
+// cube test
+string $happyCube[] = `polyCube -name "happyLittleCube"`;
+print $happyCube[0];
+string $cube = $happyCube[0];
+move 0 1 0 -r $happyCube[0];
+
+int $one = 2;
+int $calc = $one * 10; 
+print $calc;
