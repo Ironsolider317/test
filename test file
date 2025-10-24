@@ -80,6 +80,101 @@ global proc toggleMyUI() {
 }
 
 toggleMyUI;
+
+
+//Dave and Alice
+
+string $cube[] = `polyCube`;
+move 2 2 2;
+rename $cube[0] "Dave";
+
+string $sphere[] = `polySphere`;
+move -r 0 1 0;
+rename $sphere[0] "Alice";
+
+select Alice Dave;
+group;
+rename "Friends";
+
+
+
+//Random Rotation 
+
+
+global proc randomRotateSelectedUI_apply()
+{
+    //UI controls
+    float $min = `floatFieldGrp -q -value1 rotRangeFields`;
+    float $max = `floatFieldGrp -q -value2 rotRangeFields`;
+    int $useX = `checkBoxGrp -q -value1 axisChecks`;
+    int $useY = `checkBoxGrp -q -value2 axisChecks`;
+    int $useZ = `checkBoxGrp -q -value3 axisChecks`;
  
+  
+    if ($min > $max) {
+        float $tmp = $min;
+        $min = $max;
+        $max = $tmp;
+        
+    }
+ 
+    string $sel[] = `ls -sl`;
+    if (size($sel) == 0) {
+        warning "select an object.";
+        return;
+    }
+ 
+    //applies the random rotation to selected objects
+    for ($obj in $sel) {
+        float $rx = 0;
+        float $ry = 0;
+        float $rz = 0;
+ 
+        if ($useX) $rx = rand($min, $max);
+        if ($useY) $ry = rand($min, $max);
+        if ($useZ) $rz = rand($min, $max);
+ 
+        //applies the relative rotation to the object
+        rotate -r $rx $ry $rz $obj;
+        print ("Rotated " + $obj + " by (" + $rx + ", " + $ry + ", " + $rz + ")\n");
+    }
+ 
+    print ("Done. Rotated " + size($sel) + " object(s).\n");
+}
+ 
+//UI builder
+global proc randomRotateUI()
+{
+    if (`window -exists RandomRotateWin`) deleteUI RandomRotateWin;
+    window -title "Random Rotate" -widthHeight 320 150 RandomRotateWin;
+ 
+    columnLayout -adj true -rs 6;
+ 
+    text -label "Random Rotation Tool" -align "center";
+    separator -h 6;
+ 
+ 
+    floatFieldGrp -numberOfFields 2 -label "Min / Max (deg)"
+                  -value1 -45 -value2 45 rotRangeFields;
+ 
+  
+    checkBoxGrp -numberOfCheckBoxes 3 -label "Axes"
+                -label1 "Rotate X" -label2 "Rotate Y" -label3 "Rotate Z"
+                -value1 1 -value2 1 -value3 1 axisChecks;
+ 
+    //apply button
+    button -label "Apply Random Rotation" -height 34
+           -c "randomRotateSelectedUI_apply()";
+ 
+    separator -h 6;
+    text -label "Select objects first. Min/Max are inclusive. If Min>Max they will be swapped." -al "left" -wordWrap true;
+ 
+    showWindow RandomRotateWin;
+}
+ 
+//runs the UI
+randomRotateUI();
+ 
+
 
 
