@@ -176,5 +176,22 @@ global proc randomRotateUI()
 randomRotateUI();
  
 
+//Solar system UI
 
+global proc solarSystemUI()
+{
+    if (`window -exists SolarSystemWin`) deleteUI SolarSystemWin;
+    window -title "Solar System Generator" -widthHeight 380 420 SolarSystemWin;
+    columnLayout -adj true -rs 8;
+ 
+    text -l "Solar System Generator" -align "center";
+    separator -h 6;
+ 
+    radioButtonGrp -numberOfRadioButtons 2 
+        -label "Mode:" 
+        -label1 "Balanced" 
+        -label2 "Realistic" 
+        -select 1
+        systemMode;
+ showWindow SolarSystemWin;
 
