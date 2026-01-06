@@ -176,58 +176,188 @@ global proc randomRotateUI()
 randomRotateUI();
  
 
-//Solar system UI
+//My Solar System generator 
 
-global proc solarSystemUI()
+global proc createSolarSystem_IntUI()
 {
-    if (`window -exists SolarSystemWin`) deleteUI SolarSystemWin;
+    int $mode = `radioButtonGrp -q -select modeRB`;
+    int $numPlanets = `intFieldGrp -q -value1 planetIF`;
+    int $speed = `intSliderGrp -q -value speedSL`;
  
-    window -title " Solar System Generator" -widthHeight 380 360 SolarSystemWin;
-    columnLayout -adj true -rs 8;
+    //clears the Solar System generated
+    if (`objExists "SolarSystem_GRP"`) delete "SolarSystem_GRP";
+    string $root = `group -em -n "SolarSystem_GRP"`;
  
-    text -l "Solar System Generator" -align "center";
-    separator -h 6;
+    //animation
+    int $frames = ($mode == 1) ? 1440 : 2880;
+    int $sunScale = ($mode == 1) ? 8 : 12;
  
-    radioButtonGrp -numberOfRadioButtons 2 
-        -label "Mode:" 
-        -label1 "Balanced" 
-        -label2 "Realistic" 
-        -select 1
-        systemMode;
+    playbackOptions -min 1 -max $frames;
  
-    intFieldGrp -numberOfFields 1 -label "Number of Planets:" -value1 8 planetCount;
+    string $names[] = {"Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune"};
+    int $radii[]  = {1,1,2,1,3,3,2,2};
+    int $tilt[]   = {7,3,0,2,1,2,1,2};
  
-    checkBox -label "Include Orbit Inclinations" -value 1 inclBox;
+    if ($numPlanets < 1) $numPlanets = 1;
+    if ($numPlanets > 8) $numPlanets = 8;
  
-    floatSliderGrp -field true -label "Animation Speed" -min 0.1 -max 3.0 -value 1.0 speedSlider;
+    //the Sun
+    polySphere -r $sunScale -n "Sun_geo";
+    parent "Sun_geo" $root;
  
-    separator -h 8;
+    //the Sun color shader
+    if (`objExists "Sun_shader"`) delete "Sun_shader";
+    if (`objExists "Sun_SG"`) delete "Sun_SG";
  
-    button -label " Create Solar System" -height 40 
-        -bgc 0.2 0.6 0.9
-        -c "createSolarSystemFromUI()";
+    shadingNode -asShader lambert -n "Sun_shader";
+    sets -renderable true -noSurfaceShader true -empty -name "Sun_SG";
+    connectAttr -f "Sun_shader.outColor" "Sun_SG.surfaceShader";
+    setAttr "Sun_shader.color" -type double3 1 0.8 0.2;
+    sets -e -forceElement "Sun_SG" "Sun_geo";
  
-    button -label " Regenerate Colors" -height 30
-        -bgc 0.3 0.7 0.4
-        -c "regeneratePlanetColors()";
+    currentTime 1;
+    setKeyframe -at rotateY -v 0 "Sun_geo";
+    currentTime $frames;
+    setKeyframe -at rotateY -v (360 * $speed) "Sun_geo";
+    selectKey "Sun_geo.rotateY";
+    setInfinity -pri cycle -poi cycle;
  
-    button -label " Clear Solar System" -height 30
-        -bgc 0.8 0.3 0.3
-        -c "clearSolarSystem()";
+    //the planets
+    for ($i = 0; $i < $numPlanets; $i++)
+    {
+        string $p = $names[$i];
  
-    showWindow SolarSystemWin;
-}
-
-//Creates the Sun
-    
-    string $sun[] = `polySphere -r $sunScale -n "Sun_geo"`;
-    parent $sun[0] $root;
+        //clears the old planets
+        if (`objExists ($p + "_geo")`) delete ($p + "_geo");
+        if (`objExists ($p + "_orbitGrp")`) delete ($p + "_orbitGrp");
+        if (`objExists ($p + "_shader")`) delete ($p + "_shader");
+        if (`objExists ($p + "_SG")`) delete ($p + "_SG");
  
-    if (!`objExists "SunShader"`) {
-        shadingNode -asShader lambert -n "SunShader";
-        sets -renderable true -noSurfaceShader true -empty -name "SunSG";
-        connectAttr -f "SunShader.outColor" "SunSG.surfaceShader";
+        //the planets orbit group
+        group -em -n ($p + "_orbitGrp");
+        parent ($p + "_orbitGrp") $root;
+        rotate $tilt[$i] 0 0 ($p + "_orbitGrp");
+ 
+        //the planets geometry
+        polySphere -r $radii[$i] -n ($p + "_geo");
+ 
+        int $distance;
+        if ($mode == 1)
+            $distance = 10 + ($i * 8);
+        else
+            $distance = 12 + ($i * 12);
+ 
+        move $distance 0 0 ($p + "_geo");
+        parent ($p + "_geo") ($p + "_orbitGrp");
+ 
+        //the start angle
+        int $startAngle = $i * 45;
+        setAttr ($p + "_orbitGrp.rotateY") $startAngle;
+ 
+        //the planets orbit speeds
+        
+        int $planetRotation = 360 * ($numPlanets - $i);
+ 
+        currentTime 1;
+        setKeyframe -at rotateY -v $startAngle ($p + "_orbitGrp");
+ 
+        currentTime $frames;
+        setKeyframe -at rotateY -v ($startAngle + $planetRotation) ($p + "_orbitGrp");
+ 
+        selectKey ($p + "_orbitGrp.rotateY");
+        setInfinity -pri cycle -poi cycle;
+ 
+        //the planets color shader
+        string $shader = ($p + "_shader");
+        string $sg = ($p + "_SG");
+ 
+        shadingNode -asShader lambert -n $shader;
+        sets -renderable true -noSurfaceShader true -empty -name $sg;
+        connectAttr -f ($shader + ".outColor") ($sg + ".surfaceShader");
+        setAttr ($shader + ".color") -type double3 (rand(0,1)) (rand(0,1)) (rand(0,1));
+        sets -e -forceElement $sg ($p + "_geo");
     }
  
-    setAttr "SunShader.color" -type double3 1 0.8 0.2;
-    sets -e -forceElement "SunSG" $sun[0];
+    currentTime 1;
+    play -forward;
+    print "//  Solar system created (unique planet speeds, slow, Lambert shaders).\n";
+}
+ 
+
+//regenerates colors
+
+global proc regeneratePlanetColors_Int()
+{
+    string $shaders[] = `ls "*_shader"`;
+    for ($s in $shaders)
+    {
+        if ($s == "Sun_shader") continue;
+        setAttr ($s + ".color") -type double3 (rand(0,1)) (rand(0,1)) (rand(0,1));
+    }
+    print "// Planet colors regenerated.\n";
+}
+ 
+
+//clears the Solar System
+
+global proc clearSolarSystem_IntUI()
+{
+    if (`objExists "SolarSystem_GRP"`) delete "SolarSystem_GRP";
+}
+ 
+
+//UI
+
+global proc solarSystemUI_Int()
+{
+    if (`window -exists SolarUI_Int`) deleteUI SolarUI_Int;
+ 
+    window -title "Solar System Generator" -widthHeight 360 330 SolarUI_Int;
+    columnLayout -adj true -rs 8;
+ 
+    radioButtonGrp
+        -numberOfRadioButtons 2
+        -label "Mode"
+        -label1 "Balanced"
+        -label2 "Realistic"
+        -select 1
+        modeRB;
+ 
+    intFieldGrp
+        -numberOfFields 1
+        -label "Number of Planets"
+        -value1 8
+        planetIF;
+ 
+    intSliderGrp
+        -field true
+        -label "Animation Speed"
+        -min 1 -max 5 -value 1
+        speedSL;
+ 
+    separator -h 10;
+ 
+    button
+        -label "Create Solar System"
+        -height 40
+        -bgc 0.5 0.8 0.7
+        -c "createSolarSystem_IntUI()";
+ 
+    button
+        -label "Regenerate Colors"
+        -height 30
+        -bgc 0.7 0.9 0.9
+        -c "regeneratePlanetColors_Int()";
+ 
+    button
+        -label "Clear Solar System"
+        -height 30
+        -bgc 0.8 0.3 0.3
+        -c "clearSolarSystem_IntUI()";
+ 
+    showWindow SolarUI_Int;
+}
+ 
+//shows the UI
+solarSystemUI_Int();
+ 
